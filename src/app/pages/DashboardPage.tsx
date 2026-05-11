@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { MobileContainer } from "../components/MobileContainer";
 import { DashboardHeader } from "../components/dashboard/DashboardHeader";
@@ -11,20 +11,113 @@ import { SideMenu } from "../components/dashboard/SideMenu";
 export function DashboardPage() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "sales" | "history" | "inventory" | "profile">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "sales" | "history" | "profile" | "inventory">("home");
+  // State to hold our backend data
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  
+  // NEW: State specifically for the chart data
+  const [transactionsData, setTransactionsData] = useState<any[]>([]);
 
-  const handleNavigation = (tab: "home" | "sales" | "history" | "inventory" | "profile") => {
+  // Fetch data from NestJS backend when the page loads
+  useEffect(() => {
+    const fetchDashboardInfo = async () => {
+      try {
+        // --- FIX: KUNIN ANG TOKEN MULA SA LOCAL STORAGE ---
+        // Palitan ang "access_token" ng "token" kung yun ang ginamit mo sa login page mo
+        const token = localStorage.getItem("access_token") || localStorage.getItem("token"); 
+
+        // 1. Fetch Summary for Stats Cards (May Headers na!)
+        const summaryResponse = await fetch("http://localhost:3000/reports/summary", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (summaryResponse.ok) {
+          const summaryJson = await summaryResponse.json();
+          setDashboardData(summaryJson);
+        }
+
+        // 2. Fetch Transactions for the Daily Sales Chart (May Headers na rin!)
+        const transResponse = await fetch("http://localhost:3000/transactions", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (transResponse.ok) {
+          const transJson = await transResponse.json();
+          setTransactionsData(Array.isArray(transJson) ? transJson : (transJson.data || []));
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      }
+    };
+
+    fetchDashboardInfo();
+  }, []);
+
+  // Compute Chart Data exactly like in SalesReportPage
+  const chartData = useMemo(() => {
+    const grouped = transactionsData.reduce((acc: any, curr: any) => {
+      const pStatus = String(curr.paymentStatus || "").toUpperCase();
+      const sStatus = String(curr.serviceStatus || "").toUpperCase();
+      
+      // Isama lang sa chart kung nabayaran na o na-claim na
+      if (pStatus !== "PAID" && sStatus !== "CLAIMED") return acc;
+
+      const dateStr = curr.transactionDate 
+        ? curr.transactionDate.split("T")[0] 
+        : new Date().toISOString().split("T")[0];
+      
+      if (!acc[dateStr]) {
+        acc[dateStr] = { val1: 0, val2: 0, val3: 0 };
+      }
+
+      const amount = Number(curr.totalAmount || curr.amount) || 0;
+      const serviceName = (curr.serviceName || curr.items?.[0]?.service?.name || "").toUpperCase();
+
+      // I-distribute sa 3 bars (WASH, DRY, Iba pa/FOLD)
+      if (serviceName === "WASH") {
+        acc[dateStr].val1 += amount;
+      } else if (serviceName === "DRY") {
+        acc[dateStr].val2 += amount;
+      } else {
+        acc[dateStr].val3 += amount;
+      }
+
+      return acc;
+    }, {});
+
+    // I-sort by date (Oldest to Newest) at kunin ang huling 7 days
+    const sortedDates = Object.keys(grouped).sort();
+    return sortedDates.map(date => {
+      const d = new Date(date);
+      const label = isNaN(d.getTime()) ? date : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      
+      return {
+        label,
+        val1: grouped[date].val1,
+        val2: grouped[date].val2,
+        val3: grouped[date].val3
+      };
+    }).slice(-7);
+  }, [transactionsData]);
+
+  const handleNavigation = (tab: "home" | "sales" | "history" | "profile" | "inventory") => {
     setActiveTab(tab);
-    if (tab === "sales") {
-      navigate("/sales-report");
-    } else if (tab === "profile") {
-      navigate("/profile");
-    } else if (tab === "history") {
-      navigate("/history");
-    } else if (tab === "inventory") {
-      navigate("/inventory");
-    }
+    if (tab === "sales") navigate("/sales-report");
+    else if (tab === "profile") navigate("/profile");
+    else if (tab === "history") navigate("/history");
+    else if (tab === "inventory") navigate("/inventory");
   };
+
+  // Safely extract the data (fallback to 0 if loading)
+  const totalSales = dashboardData?.overview?.totalSalesAmount || 0;
+  const totalCustomers = dashboardData?.overview?.totalCustomers || 0;
+
+  // Format the currency to match your Figma design
+  const formattedSalesWhole = totalSales.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const formattedSalesDecimal = (totalSales % 1).toFixed(2).substring(1); // extracts ".00"
+
 
   return (
     <MobileContainer>

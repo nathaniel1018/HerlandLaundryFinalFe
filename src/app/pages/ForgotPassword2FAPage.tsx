@@ -74,7 +74,7 @@ export function ForgotPassword2FAPage() {
             {codes.map((code, index) => (
               <div key={index} className="rounded-[10px] size-[50px] border border-[#e1e1e1] flex items-center justify-center">
                 <input
-                  ref={(el) => (inputRefs.current[index] = el)}
+                  ref={(el) => {inputRefs.current[index] = el}}
                   type="text"
                   inputMode="numeric"
                   maxLength={1}

@@ -4,15 +4,13 @@ import { X } from "lucide-react";
 export type TabType = "unpaid" | "paid" | "claimed";
 
 export interface SalesEntry {
-  id: number;
+  id: string;
   status: TabType;
   name: string;
   service: string;
   amount: number;
   date: string;
-  // Paid-specific fields
   paymentMethod?: string;
-  // Claimed-specific fields
   classification?: string;
   washDate?: string;
 }
@@ -40,28 +38,30 @@ export function SalesEntryModal({ isOpen, onClose, onSave, entry, mode, tabType 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (entry && mode === "edit") {
-      setFormData({
-        name: entry.name,
-        service: entry.service,
-        amount: entry.amount.toString(),
-        date: entry.date,
-        paymentMethod: entry.paymentMethod || "CASH",
-        classification: entry.classification || "REGULAR",
-        washDate: entry.washDate || new Date().toISOString().split("T")[0],
-      });
-    } else {
-      setFormData({
-        name: "",
-        service: "WASH",
-        amount: "",
-        date: new Date().toISOString().split("T")[0],
-        paymentMethod: "CASH",
-        classification: "REGULAR",
-        washDate: new Date().toISOString().split("T")[0],
-      });
+    if (isOpen) {
+      if (entry && mode === "edit") {
+        setFormData({
+          name: entry.name,
+          service: entry.service,
+          amount: entry.amount.toString(),
+          date: entry.date,
+          paymentMethod: entry.paymentMethod || "CASH",
+          classification: entry.classification || "REGULAR",
+          washDate: entry.washDate || new Date().toISOString().split("T")[0],
+        });
+      } else {
+        setFormData({
+          name: "",
+          service: "WASH", // Ensure "WASH" exists in your database exactly like this
+          amount: "",
+          date: new Date().toISOString().split("T")[0],
+          paymentMethod: "CASH",
+          classification: "REGULAR",
+          washDate: new Date().toISOString().split("T")[0],
+        });
+      }
+      setErrors({});
     }
-    setErrors({});
   }, [entry, mode, isOpen]);
 
   const validate = () => {
@@ -84,18 +84,29 @@ export function SalesEntryModal({ isOpen, onClose, onSave, entry, mode, tabType 
     
     if (!validate()) return;
 
-    const entryData = {
-      ...(mode === "edit" && entry ? { id: entry.id } : {}),
+    // FIX: Reverted to matching the SalesEntry interface (name, service, amount, date)
+    // The parent component (SalesReportPage) will handle translating these to the backend DTO.
+    const baseEntryData: Omit<SalesEntry, "id"> = {
       name: formData.name.trim().toUpperCase(),
       service: formData.service,
       amount: parseFloat(formData.amount),
       date: formData.date,
-      paymentMethod: formData.paymentMethod,
-      classification: formData.classification,
-      washDate: formData.washDate,
+      status: tabType, 
+      
+      ...(tabType !== "unpaid" && { paymentMethod: formData.paymentMethod }),
+      
+      ...(tabType === "claimed" && { 
+        classification: formData.classification,
+        washDate: formData.washDate 
+      }),
     };
 
-    onSave(entryData as any);
+    // 3. Handle Edit vs Add
+    const entryData = mode === "edit" && entry?.id
+      ? { ...baseEntryData, id: entry.id } as SalesEntry
+      : baseEntryData;
+
+    onSave(entryData);
     onClose();
   };
 

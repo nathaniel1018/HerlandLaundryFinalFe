@@ -7,29 +7,110 @@ import { Eye, EyeOff } from "lucide-react";
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({ username: "", password: "" });
+  const [errors, setErrors] = useState({ email: "", password: "", general: "" });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    const newErrors = { username: "", password: "" };
 
-    if (!username.trim()) {
-      newErrors.username = "Username is required";
+   const handleLogin = async () => {
+
+    const newErrors = { email: "", password: "", general: "" };
+
+   
+
+    if (!email.trim()) {
+
+      newErrors.email = "Email is required";
+
     }
+
     if (!password.trim()) {
+
       newErrors.password = "Password is required";
+
     }
+
+
 
     setErrors(newErrors);
 
-    if (!newErrors.username && !newErrors.password) {
-      // Navigate to two-step verification
-      navigate("/two-step-verification");
+
+
+    if (!newErrors.email && !newErrors.password) {
+
+      setIsLoading(true);
+
+     
+
+      try {
+
+        const response = await fetch("http://localhost:3000/auth/login", {
+
+          method: "POST",
+
+          headers: {
+
+            "Content-Type": "application/json",
+
+          },
+
+          body: JSON.stringify({ email, password }),
+
+        });
+
+
+
+        const data = await response.json();
+
+
+
+        if (!response.ok) {
+
+          throw new Error(data.message || "Invalid credentials");
+
+        }
+
+
+
+        // 1. Kung kailangan ng 2FA (OTP)
+
+        if (data.message === '2FA_REQUIRED') {
+
+          // Ipasa natin ang email at password sa 2FA page
+
+          navigate("/two-step-verification", { state: { email, password } });
+
+        }
+
+        // 2. Kung rekta pasok na
+
+        else if (data.access_token) {
+
+          localStorage.setItem("access_token", data.access_token);
+
+          navigate("/dashboard");
+
+        }
+
+
+
+      } catch (error: any) {
+
+        setErrors(prev => ({ ...prev, general: error.message }));
+
+      } finally {
+
+        setIsLoading(false);
+
+      }
+
     }
+
   };
+
 
   return (
     <MobileContainer>
@@ -64,14 +145,14 @@ export function AdminLoginPage() {
               </label>
               <input
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
                 className="w-full bg-white/90 border-2 border-[#3878c2]/30 rounded-lg px-4 py-3 outline-none font-['Poppins:Regular',sans-serif] text-[15px] text-[#184e8d] placeholder:text-[#3878c2]/50 focus:border-[#3878c2] focus:bg-white transition-colors"
                 style={{ caretColor: "#3878c2" }}
               />
-              {errors.username && (
-                <p className="font-['Poppins:Medium',sans-serif] text-[12px] text-red-500 mt-1">{errors.username}</p>
+              {errors.email && (
+                <p className="font-['Poppins:Medium',sans-serif] text-[12px] text-red-500 mt-1">{errors.email}</p>
               )}
             </div>
 

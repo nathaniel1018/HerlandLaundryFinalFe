@@ -4,6 +4,7 @@ import { ArrowLeft, Shield, Eye, EyeOff, Download, Trash2 } from "lucide-react";
 import { MobileContainer } from "../components/MobileContainer";
 import { SettingsToggleRow } from "../components/settings/SettingsToggleRow";
 
+
 interface PrivacyPreferences {
   profileVisibility: boolean;
   showEmail: boolean;

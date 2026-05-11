@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { MobileContainer } from "../components/MobileContainer";
@@ -9,41 +9,21 @@ import { TransactionTableRow } from "../components/history/TransactionTableRow";
 import { TransactionDetailsModal, Transaction } from "../components/history/TransactionDetailsModal";
 import { TransactionStatus } from "../components/history/StatusBadge";
 
-// Mock transaction data
-const mockTransactions: Transaction[] = [
-  { id: 1, invoice: "T01", date: "2026-01-26", amount: 250, status: "ON-GOING", customer: "JUAN DELA CRUZ", service: "WASH & DRY", paymentMethod: "CASH", notes: "Priority order" },
-  { id: 2, invoice: "T02", date: "2026-02-26", amount: 350, status: "COMPLETED", customer: "MARIA SANTOS", service: "FULL SERVICE", paymentMethod: "GCASH" },
-  { id: 3, invoice: "T03", date: "2026-01-26", amount: 100, status: "ON-GOING", customer: "PEDRO GARCIA", service: "WASH", paymentMethod: "CASH" },
-  { id: 4, invoice: "T04", date: "2026-04-26", amount: 200, status: "CANCELLED", customer: "ROSA CRUZ", service: "DRY", paymentMethod: "CARD", notes: "Customer request" },
-  { id: 5, invoice: "T05", date: "2026-05-26", amount: 150, status: "COMPLETED", customer: "ALICE REYES", service: "FOLD", paymentMethod: "CASH" },
-  { id: 6, invoice: "T06", date: "2026-03-15", amount: 400, status: "COMPLETED", customer: "JOSE LOPEZ", service: "WASH & FOLD", paymentMethod: "GCASH" },
-  { id: 7, invoice: "T07", date: "2026-03-14", amount: 175, status: "ON-GOING", customer: "ANA MARTINEZ", service: "DRY", paymentMethod: "CASH" },
-  { id: 8, invoice: "T08", date: "2026-03-13", amount: 300, status: "COMPLETED", customer: "CARLOS RAMOS", service: "WASH", paymentMethod: "CARD" },
-  { id: 9, invoice: "T09", date: "2026-03-12", amount: 225, status: "CANCELLED", customer: "LINDA TORRES", service: "FULL SERVICE", paymentMethod: "GCASH", notes: "Duplicate order" },
-  { id: 10, invoice: "T10", date: "2026-03-11", amount: 125, status: "COMPLETED", customer: "MARCO DELA CRUZ", service: "WASH", paymentMethod: "CASH" },
-  { id: 11, invoice: "T11", date: "2026-03-10", amount: 450, status: "ON-GOING", customer: "SOFIA REYES", service: "FULL SERVICE", paymentMethod: "CARD" },
-  { id: 12, invoice: "T12", date: "2026-03-09", amount: 180, status: "COMPLETED", customer: "ANTONIO GARCIA", service: "WASH & DRY", paymentMethod: "GCASH" },
-  { id: 13, invoice: "T13", date: "2026-03-08", amount: 210, status: "COMPLETED", customer: "ELENA SANTOS", service: "FOLD", paymentMethod: "CASH" },
-  { id: 14, invoice: "T14", date: "2026-03-07", amount: 320, status: "ON-GOING", customer: "RAFAEL CRUZ", service: "WASH & FOLD", paymentMethod: "CARD" },
-  { id: 15, invoice: "T15", date: "2026-03-06", amount: 275, status: "COMPLETED", customer: "CARMEN REYES", service: "FULL SERVICE", paymentMethod: "CASH" },
-  { id: 16, invoice: "T16", date: "2026-03-05", amount: 95, status: "CANCELLED", customer: "DIEGO LOPEZ", service: "DRY", paymentMethod: "GCASH", notes: "Out of service area" },
-  { id: 17, invoice: "T17", date: "2026-03-04", amount: 385, status: "COMPLETED", customer: "ISABEL MARTINEZ", service: "WASH & DRY", paymentMethod: "CARD" },
-  { id: 18, invoice: "T18", date: "2026-03-03", amount: 140, status: "ON-GOING", customer: "GABRIEL RAMOS", service: "WASH", paymentMethod: "CASH" },
-  { id: 19, invoice: "T19", date: "2026-03-02", amount: 260, status: "COMPLETED", customer: "LUCIA TORRES", service: "FOLD", paymentMethod: "GCASH" },
-  { id: 20, invoice: "T20", date: "2026-03-01", amount: 420, status: "COMPLETED", customer: "MIGUEL DELA CRUZ", service: "FULL SERVICE", paymentMethod: "CARD" },
-];
 
 type SortField = "invoice" | "date" | "amount" | "status";
 type SortOrder = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 5;
 
+
 export function TransactionHistoryPage() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "sales" | "history" | "inventory" | "profile">("history");
+  const [activeTab, setActiveTab] = useState<"home" | "sales" | "history" | "profile" | "inventory">("history");
   
-  // State
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,17 +33,98 @@ export function TransactionHistoryPage() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  const handleNavigation = (tab: "home" | "sales" | "history" | "inventory" | "profile") => {
-    setActiveTab(tab);
-    if (tab === "home") {
-      navigate("/dashboard");
-    } else if (tab === "sales") {
-      navigate("/sales-report");
-    } else if (tab === "profile") {
-      navigate("/profile");
-    } else if (tab === "inventory") {
-      navigate("/inventory");
+  // --- STEP 2: FETCH THE DATA (WITH TOKEN) ---
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        // KUNIN ANG TOKEN
+        const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+
+        const response = await fetch("http://localhost:3000/transactions", {
+          headers: {
+            "Authorization": `Bearer ${token}` // <--- FIX: Isinama ang token
+          }
+        }); 
+        
+        if (!response.ok) throw new Error("Failed to fetch transactions");
+        
+        const json = await response.json();
+        
+        // Handle variations in response structure (json or json.data)
+        const rawData = Array.isArray(json) ? json : (json.data || []);
+        
+        const liveData = rawData.map((item: any) => ({
+          id: item.id,
+          invoice: item.invoiceNumber,
+          date: item.transactionDate.split("T")[0], 
+          amount: item.totalAmount,
+          status: item.serviceStatus.replace("_", "-"), 
+          customer: item.customerName,
+          service: item.items && item.items.length > 0 ? item.items[0].service.name : "N/A",
+          paymentMethod: item.paymentMethod || "N/A",
+          paymentStatus: item.paymentStatus || "UNPAID",
+          notes: ""
+        }));
+
+        setTransactions(liveData);
+      } catch (error) {
+        console.error("Error fetching live data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
+  // --- STEP 3: UPDATE DATA (WITH TOKEN) ---
+  const handleUpdateTransaction = async (id: number, updates: { paymentStatus?: string, serviceStatus?: string }) => {
+    try {
+      // KUNIN ANG TOKEN
+      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+
+      const response = await fetch(`http://localhost:3000/transactions/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // <--- FIX: Isinama ang token
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update transaction");
+      }
+
+      setTransactions(prev => prev.map(t => {
+        if (t.id === id) {
+          return {
+            ...t,
+            paymentStatus: (updates.paymentStatus as "UNPAID" | "PAID") || t.paymentStatus,
+            status: (updates.serviceStatus ? updates.serviceStatus.replace("_", "-") : t.status) as TransactionStatus
+          };
+        }
+        return t;
+      }));
+
+      setShowDetailsModal(false);
+      alert("Successfully updated!");
+
+    } catch (error) {
+      console.error("Error updating:", error);
+      alert("Failed to update transaction. Please try again.");
     }
+  };
+
+  // --- REST OF YOUR LOGIC (NO CHANGES) ---
+  const handleNavigation = (tab: "home" | "sales" | "history" | "profile" | "inventory") => {
+    setActiveTab(tab);
+    if (tab === "home") navigate("/dashboard");
+    else if (tab === "sales") navigate("/sales-report");
+    else if (tab === "profile") navigate("/profile");
+    else if (tab === "inventory") navigate("/inventory");
+
+
   };
 
   const handleViewDetails = (transaction: Transaction) => {
@@ -71,34 +132,25 @@ export function TransactionHistoryPage() {
     setShowDetailsModal(true);
   };
 
-  // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
-    let filtered = [...mockTransactions];
-
-    // Apply status filter
+    let filtered = [...transactions];
     if (statusFilter !== "ALL") {
       filtered = filtered.filter(t => t.status === statusFilter);
     }
-
-    // Apply sorting
     filtered.sort((a, b) => {
       let aVal: any = a[sortField];
       let bVal: any = b[sortField];
-
       if (sortField === "amount") {
         aVal = parseFloat(aVal);
         bVal = parseFloat(bVal);
       }
-
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-
     return filtered;
-  }, [statusFilter, sortField, sortOrder]);
+  }, [transactions, statusFilter, sortField, sortOrder]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredAndSortedData.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -116,40 +168,28 @@ export function TransactionHistoryPage() {
 
   const handleFilterByStatus = (status: TransactionStatus | "ALL") => {
     setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1); 
     setShowFilterMenu(false);
   };
 
   const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
     if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       if (currentPage <= 3) {
-        for (let i = 1; i <= maxVisible; i++) {
-          pages.push(i);
-        }
+        for (let i = 1; i <= maxVisible; i++) pages.push(i);
       } else if (currentPage >= totalPages - 2) {
-        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) {
-          pages.push(i);
-        }
+        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
       } else {
-        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-          pages.push(i);
-        }
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) pages.push(i);
       }
     }
-    
     return pages;
   };
 

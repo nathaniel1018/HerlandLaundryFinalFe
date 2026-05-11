@@ -10,6 +10,7 @@ export interface Transaction {
   customer: string;
   service: string;
   paymentMethod: string;
+  paymentStatus: "UNPAID" | "PAID"; // Added this to track exact payment state
   notes?: string;
 }
 

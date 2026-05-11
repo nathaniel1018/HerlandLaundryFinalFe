@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Bell, Check, Trash2, X } from "lucide-react";
 import { MobileContainer } from "../components/MobileContainer";
@@ -7,7 +7,7 @@ import { BottomNav } from "../components/dashboard/BottomNav";
 import { SideMenu } from "../components/dashboard/SideMenu";
 
 interface Notification {
-  id: number;
+  id: number | string;
   title: string;
   message: string;
   timestamp: string;
@@ -15,56 +15,37 @@ interface Notification {
   type: "info" | "success" | "warning" | "error";
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: 1,
-    title: "New Order Received",
-    message: "Juan Dela Cruz placed a new order for Wash & Dry service.",
-    timestamp: "2026-03-22T10:30:00",
-    isRead: false,
-    type: "info"
-  },
-  {
-    id: 2,
-    title: "Payment Received",
-    message: "Payment of PHP 350.00 received from Maria Santos via GCash.",
-    timestamp: "2026-03-22T09:15:00",
-    isRead: false,
-    type: "success"
-  },
-  {
-    id: 3,
-    title: "Order Completed",
-    message: "Order #T08 has been completed and is ready for pickup.",
-    timestamp: "2026-03-21T16:45:00",
-    isRead: true,
-    type: "success"
-  },
-  {
-    id: 4,
-    title: "Low Stock Alert",
-    message: "Detergent supply is running low. Please restock soon.",
-    timestamp: "2026-03-21T08:00:00",
-    isRead: true,
-    type: "warning"
-  },
-  {
-    id: 5,
-    title: "Order Cancelled",
-    message: "Rosa Cruz cancelled order #T04. Refund processed.",
-    timestamp: "2026-03-20T14:20:00",
-    isRead: true,
-    type: "error"
-  },
-];
-
 export function NotificationsPage() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "sales" | "history" | "inventory" | "profile">("home");
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [activeTab, setActiveTab] = useState<"home" | "sales" | "history" | "profile" | "inventory">("home");
+  
+  // Naka-empty array na ito sa simula instead of mock data
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleNavigation = (tab: "home" | "sales" | "history" | "inventory" | "profile") => {
+  // --- FETCH REAL DATA ---
+  const fetchNotifications = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:3000/notifications");
+      if (!response.ok) throw new Error("Failed to fetch notifications");
+      const json = await response.json();
+      
+      const notifsArray = Array.isArray(json) ? json : (json.data || []);
+      setNotifications(notifsArray);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const handleNavigation = (tab: "home" | "sales" | "history" | "profile" | "inventory") => {
     setActiveTab(tab);
     if (tab === "home") {
       navigate("/dashboard");
@@ -79,29 +60,75 @@ export function NotificationsPage() {
     }
   };
 
-  const handleMarkAsRead = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, isRead: true } : notif
-      )
-    );
-  };
+  // --- UPDATE TO BACKEND ---
+  const handleMarkAsRead = async (id: number | string) => {
+    try {
+      // API call para i-update sa database (Assuming PATCH method ang gamit mo)
+      const response = await fetch(`http://localhost:3000/notifications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isRead: true })
+      });
 
-  const handleDelete = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this notification?")) {
-      setNotifications(prev => prev.filter(notif => notif.id !== id));
+      if (!response.ok) throw new Error("Failed to mark as read");
+
+      // Update UI
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === id ? { ...notif, isRead: true } : notif
+        )
+      );
+    } catch (error) {
+      console.error("Error updating notification:", error);
     }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, isRead: true }))
-    );
+  // --- DELETE FROM BACKEND ---
+  const handleDelete = async (id: number | string) => {
+    if (window.confirm("Are you sure you want to delete this notification?")) {
+      try {
+        const response = await fetch(`http://localhost:3000/notifications/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) throw new Error("Failed to delete notification");
+
+        // Update UI
+        setNotifications(prev => prev.filter(notif => notif.id !== id));
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+      }
+    }
   };
 
-  const handleClearAll = () => {
+  const handleMarkAllAsRead = async () => {
+    try {
+      // Optional: Kung may endpoint ka for bulk update, dito mo ilalagay. 
+      // For now, ina-assume ko na meron kang /notifications/mark-all-read endpoint
+      await fetch("http://localhost:3000/notifications/mark-all-read", {
+        method: 'PATCH'
+      });
+
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, isRead: true }))
+      );
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
+  };
+
+  const handleClearAll = async () => {
     if (window.confirm("Are you sure you want to clear all notifications?")) {
-      setNotifications([]);
+      try {
+        // Optional: Endpoint for bulk delete
+        await fetch("http://localhost:3000/notifications/clear-all", {
+          method: 'DELETE'
+        });
+
+        setNotifications([]);
+      } catch (error) {
+        console.error("Error clearing notifications:", error);
+      }
     }
   };
 
@@ -118,6 +145,7 @@ export function NotificationsPage() {
   };
 
   const formatTimestamp = (timestamp: string) => {
+    if (!timestamp) return "Just now";
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -135,6 +163,7 @@ export function NotificationsPage() {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
   };
+
 
   return (
     <MobileContainer>
