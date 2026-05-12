@@ -2,19 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Logo } from "../components/Logo";
 import { BackgroundShape } from "../components/BackgroundShape";
-import { TextInput } from "../components/TextInput";
 import { Checkbox } from "../components/Checkbox";
 import { MobileContainer } from "../components/MobileContainer";
 
 export function StaffLoginPage() {
   const navigate = useNavigate();
-  // Pinalitan natin ang state to 'email' para mag-match sa backend mo
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: "", password: "", general: "" });
-  const [isLoading, setIsLoading] = useState(false); // Para sa loading state ng button
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     const newErrors = { email: "", password: "", general: "" };
@@ -46,27 +44,26 @@ export function StaffLoginPage() {
           throw new Error(data.message || "Invalid credentials");
         }
 
-        
         // 1. Kung kailangan ng 2FA (OTP)
         if (data.message === '2FA_REQUIRED') {
-          // Ipasa natin ang email sa next page para alam ng 2FA page kung kaninong email ang ife-fetch
           navigate("/two-step-verification", { state: { email, password } });
         }
-        // 2. Kung rekta pasok na (Staff na walang 2FA setup)
+        // 2. Kung rekta pasok na
         else if (data.access_token) {
-          // FIXED: Pinalitan ang "token" ng "access_token" para mahanap ng ProfilePage
           localStorage.setItem("access_token", data.access_token);
-          navigate("/dashboard");
+          // FIXED: Papunta dapat sa /staff-dashboard para sa Staff role
+          navigate("/staff-dashboard");
         }
 
       } catch (error: any) {
+        // I-set ang error message para makita ng user
         setErrors(prev => ({ ...prev, general: error.message }));
       } finally {
         setIsLoading(false);
       }
     }
   };
-  
+
   return (
     <MobileContainer>
       <div
@@ -79,19 +76,23 @@ export function StaffLoginPage() {
       >
         <BackgroundShape />
 
-        {/* Logo */}
         <div className="relative z-10 mt-[60px] mb-[60px]">
           <Logo />
         </div>
 
-        {/* Welcome Back Title */}
         <div className="relative z-10 flex flex-col font-['Poppins:SemiBold',sans-serif] justify-center text-[#184e8d] text-[32px] text-center tracking-[1.6px] mb-[40px]">
           <h1 className="leading-[50px]">Welcome Back!</h1>
         </div>
 
-        {/* Form Container */}
         <div className="relative z-10 w-full max-w-[307px] px-4">
-          {/* Username Field */}
+          
+          {/* FIXED: Display general error message here */}
+          {errors.general && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 text-[12px] rounded-md font-['Poppins:Medium',sans-serif] text-center">
+              {errors.general}
+            </div>
+          )}
+
           <div className="mb-[20px]">
             <p className="font-['Poppins:Medium',sans-serif] leading-[normal] not-italic text-[#184e8d] text-[15px] mb-2">
               Username
@@ -111,7 +112,6 @@ export function StaffLoginPage() {
             )}
           </div>
 
-          {/* Password Field */}
           <div className="mb-[15px]">
             <p className="font-['Poppins:Medium',sans-serif] leading-[normal] not-italic text-[#184e8d] text-[15px] mb-2">
               Password
@@ -138,7 +138,6 @@ export function StaffLoginPage() {
             )}
           </div>
 
-          {/* Remember Me and Forgot Password */}
           <div className="flex items-center justify-between mt-[20px] mb-[40px]">
             <Checkbox
               checked={rememberMe}
@@ -154,14 +153,14 @@ export function StaffLoginPage() {
           </div>
         </div>
 
-        {/* Login Button */}
         <div className="relative z-10 w-full max-w-[352px] px-4 mt-[20px]">
           <button
             onClick={handleLogin}
-            className="relative bg-gradient-to-r from-[#20a9ea] h-[47px] rounded-[30px] to-[#006c9f] via-[#118cc6] via-[69.712%] w-full flex items-center justify-center cursor-pointer border-none"
+            disabled={isLoading}
+            className={`relative bg-gradient-to-r from-[#20a9ea] h-[47px] rounded-[30px] to-[#006c9f] via-[#118cc6] via-[69.712%] w-full flex items-center justify-center cursor-pointer border-none ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             <p className="font-['Poppins:SemiBold',sans-serif] text-[16px] text-white tracking-[0.8px] leading-[50px]">
-              Log in as Staff
+              {isLoading ? "Logging in..." : "Log in as Staff"}
             </p>
           </button>
         </div>
@@ -170,6 +169,7 @@ export function StaffLoginPage() {
   );
 }
 
+// ... rest of the code (EyeOffButton) remains the same
 function EyeOffButton({ isVisible }: { isVisible: boolean }) {
   return (
     <div className="h-[21px] w-[23px]">

@@ -1,3 +1,6 @@
+import React from "react";
+
+// 1. Dinagdag natin ang interface para alam ng component kung anong data ang tatanggapin niya
 export interface DailyChartData {
   label: string; // e.g., "Oct 12", "Oct 13"
   val1: number;  // Blue bar
@@ -38,19 +41,19 @@ export function DailySalesChart({ data }: DailySalesChartProps) {
         Daily Sales
       </h3>
 
-      {/* Legend */}
+      {/* Legend - Updated the labels slightly to fit a daily laundry context, but kept your exact UI */}
       <div className="flex items-center gap-4 mb-4">
         <div className="flex items-center gap-1">
           <div className="size-[8px] rounded-full bg-[#3878c2]" />
-          <p className="font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px]">Jan</p>
+          <p className="font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px]">WASH</p>
         </div>
         <div className="flex items-center gap-1">
           <div className="size-[8px] rounded-full bg-[#4bad40]" />
-          <p className="font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px]">Feb</p>
+          <p className="font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px]">DRY</p>
         </div>
         <div className="flex items-center gap-1">
           <div className="size-[8px] rounded-full bg-[#63bce6]" />
-          <p className="font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px]">March</p>
+          <p className="font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px]">FOLD</p>
         </div>
       </div>
 
@@ -78,34 +81,40 @@ export function DailySalesChart({ data }: DailySalesChartProps) {
             <div className="border-t border-[#bec1c6] w-full" />
           </div>
 
-          {/* Bars */}
+          {/* Bars - Ngayon ay dynamic na ang height base sa data! */}
           <div className="absolute inset-x-0 bottom-6 top-0 flex items-end justify-around gap-1 px-2">
-            {chartData.map((data, index) => (
-              <div key={index} className="flex-1 flex items-end gap-[2px] h-full">
+            {chartData.map((item, index) => (
+              <div key={index} className="flex-1 flex items-end gap-[2px] h-full group relative">
+                
+                {/* TOOLTIP: Ipinapakita yung exact amount pag ni-hover */}
+                <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] py-1 px-2 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
+                  Total: ₱{(item.val1 + item.val2 + item.val3).toFixed(2)}
+                </div>
+
                 <div 
-                  className="flex-1 bg-[#3878c2] rounded-t"
-                  style={{ height: `${(data.val1 / maxValue) * 100}%` }}
+                  className="flex-1 bg-[#3878c2] rounded-t transition-all duration-500"
+                  style={{ height: `${(item.val1 / maxValue) * 100}%` }}
                 />
                 <div 
-                  className="flex-1 bg-[#4bad40] rounded-t"
-                  style={{ height: `${(data.val2 / maxValue) * 100}%` }}
+                  className="flex-1 bg-[#4bad40] rounded-t transition-all duration-500"
+                  style={{ height: `${(item.val2 / maxValue) * 100}%` }}
                 />
                 <div 
-                  className="flex-1 bg-[#63bce6] rounded-t"
-                  style={{ height: `${(data.val3 / maxValue) * 100}%` }}
+                  className="flex-1 bg-[#63bce6] rounded-t transition-all duration-500"
+                  style={{ height: `${(item.val3 / maxValue) * 100}%` }}
                 />
               </div>
             ))}
           </div>
 
-          {/* X-Axis Labels */}
+          {/* X-Axis Labels - Ngayon ay hindi na "000" */}
           <div className="absolute bottom-0 left-0 right-0 flex justify-around px-2">
-            {chartData.map((data, index) => (
+            {chartData.map((item, index) => (
               <p 
                 key={index} 
-                className="flex-1 font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px] text-center"
+                className="flex-1 font-['Inter:Regular',sans-serif] text-[#3a3e44] text-[10px] text-center truncate px-1"
               >
-                000
+                {item.label}
               </p>
             ))}
           </div>

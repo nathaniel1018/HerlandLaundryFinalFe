@@ -5,19 +5,24 @@ interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
+  isStaff?: boolean; // Added optional isStaff prop
 }
 
-export function SideMenu({ isOpen, onClose, onLogout }: SideMenuProps) {
+export function SideMenu({ isOpen, onClose, onLogout, isStaff = false }: SideMenuProps) {
   const navigate = useNavigate();
 
+  // Helper to handle navigation based on role
   const handleNavigation = (path: string) => {
-    navigate(path);
-    onClose(); // Close sidebar after navigation
+    // If it's staff, we prepend 'staff-' to the route if it's not already there
+    // This aligns with your StaffInventoryPage navigation logic
+    const targetPath = isStaff ? `/staff${path}` : path;
+    navigate(targetPath);
+    onClose(); 
   };
 
   const handleLogout = () => {
     onLogout();
-    onClose(); // Close sidebar after logout
+    onClose(); 
   };
 
   return (
@@ -44,7 +49,8 @@ export function SideMenu({ isOpen, onClose, onLogout }: SideMenuProps) {
           User
         </p>
         <p className="font-['Poppins:ExtraLight',sans-serif] text-white text-[12px] leading-[normal]">
-          Admin
+          {/* Dynamically show Admin or Staff */}
+          {isStaff ? "Staff" : "Admin"}
         </p>
       </div>
 
@@ -77,6 +83,15 @@ export function SideMenu({ isOpen, onClose, onLogout }: SideMenuProps) {
         >
           Sales Report
         </button>
+        {/* If Admin, they might have an Inventory link too */}
+        {!isStaff && (
+          <button 
+            onClick={() => handleNavigation("/inventory")}
+            className="font-['Poppins:Regular',sans-serif] text-white text-[16px] leading-[normal] bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            Inventory
+          </button>
+        )}
       </nav>
 
       {/* Divider */}

@@ -9,12 +9,10 @@ import { TransactionTableRow } from "../components/history/TransactionTableRow";
 import { TransactionDetailsModal, Transaction } from "../components/history/TransactionDetailsModal";
 import { TransactionStatus } from "../components/history/StatusBadge";
 
-
 type SortField = "invoice" | "date" | "amount" | "status";
 type SortOrder = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 5;
-
 
 export function TransactionHistoryPage() {
   const navigate = useNavigate();
@@ -123,8 +121,6 @@ export function TransactionHistoryPage() {
     else if (tab === "sales") navigate("/sales-report");
     else if (tab === "profile") navigate("/profile");
     else if (tab === "inventory") navigate("/inventory");
-
-
   };
 
   const handleViewDetails = (transaction: Transaction) => {
@@ -196,7 +192,6 @@ export function TransactionHistoryPage() {
   return (
     <MobileContainer>
       <div className="bg-[#f5f5f5] relative size-full flex flex-col overflow-x-hidden">
-        {/* Side Menu Overlay */}
         {isMenuOpen && (
           <div 
             className="fixed inset-0 bg-black/50 z-40"
@@ -204,14 +199,12 @@ export function TransactionHistoryPage() {
           />
         )}
         
-        {/* Side Menu */}
         <SideMenu 
           isOpen={isMenuOpen} 
           onClose={() => setIsMenuOpen(false)}
           onLogout={() => navigate("/login")}
         />
 
-        {/* Header */}
         <DashboardHeader 
           userName="User"
           onNotificationClick={() => navigate("/notifications")}
@@ -220,9 +213,7 @@ export function TransactionHistoryPage() {
           notificationCount={3}
         />
 
-        {/* Main Content */}
         <div className="flex-1 overflow-y-auto pb-24">
-          {/* Welcome Section */}
           <div className="px-6 pt-4 pb-4 bg-white mb-2">
             <p className="font-['Poppins:SemiBold',sans-serif] text-[#3878c2] text-[16px] leading-[24px]">
               Welcome back, User
@@ -232,9 +223,7 @@ export function TransactionHistoryPage() {
             </h1>
           </div>
 
-          {/* Sort and Filter Controls */}
           <div className="px-6 py-4 bg-white mb-2 flex items-center gap-3">
-            {/* Sort Button */}
             <div className="relative">
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
@@ -246,38 +235,24 @@ export function TransactionHistoryPage() {
                 <ChevronDown className="size-[16px]" color="white" strokeWidth={2} />
               </button>
 
-              {/* Sort Dropdown */}
               {showSortMenu && (
                 <div className="absolute top-full left-0 mt-1 bg-white border border-[#e0e2e6] rounded shadow-lg z-10 min-w-[150px]">
-                  <button 
-                    onClick={() => handleSort("invoice")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleSort("invoice")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     By Invoice {sortField === "invoice" && (sortOrder === "asc" ? "↑" : "↓")}
                   </button>
-                  <button 
-                    onClick={() => handleSort("date")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleSort("date")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     By Date {sortField === "date" && (sortOrder === "asc" ? "↑" : "↓")}
                   </button>
-                  <button 
-                    onClick={() => handleSort("amount")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleSort("amount")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     By Amount {sortField === "amount" && (sortOrder === "asc" ? "↑" : "↓")}
                   </button>
-                  <button 
-                    onClick={() => handleSort("status")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleSort("status")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     By Status {sortField === "status" && (sortOrder === "asc" ? "↑" : "↓")}
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Filter Button */}
             <div className="relative">
               <button
                 onClick={() => setShowFilterMenu(!showFilterMenu)}
@@ -289,31 +264,18 @@ export function TransactionHistoryPage() {
                 <ChevronDown className="size-[16px]" color="white" strokeWidth={2} />
               </button>
 
-              {/* Filter Dropdown */}
               {showFilterMenu && (
                 <div className="absolute top-full left-0 mt-1 bg-white border border-[#e0e2e6] rounded shadow-lg z-10 min-w-[140px]">
-                  <button 
-                    onClick={() => handleFilterByStatus("ALL")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleFilterByStatus("ALL")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     All Status {statusFilter === "ALL" && "✓"}
                   </button>
-                  <button 
-                    onClick={() => handleFilterByStatus("ON-GOING")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleFilterByStatus("ON-GOING")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     On-going {statusFilter === "ON-GOING" && "✓"}
                   </button>
-                  <button 
-                    onClick={() => handleFilterByStatus("COMPLETED")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleFilterByStatus("COMPLETED")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     Completed {statusFilter === "COMPLETED" && "✓"}
                   </button>
-                  <button 
-                    onClick={() => handleFilterByStatus("CANCELLED")}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer"
-                  >
+                  <button onClick={() => handleFilterByStatus("CANCELLED")} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[12px] border-none bg-transparent cursor-pointer">
                     Cancelled {statusFilter === "CANCELLED" && "✓"}
                   </button>
                 </div>
@@ -321,40 +283,29 @@ export function TransactionHistoryPage() {
             </div>
           </div>
 
-          {/* Transaction Table */}
           <div className="px-6 py-4 bg-white mb-2">
             <div className="mb-3">
               <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[12px]">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} transactions
+                Showing {transactions.length === 0 ? 0 : startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} transactions
               </p>
             </div>
 
-            {/* Table Header */}
             <div className="grid grid-cols-[0.8fr_0.9fr_0.8fr_1fr_0.7fr] gap-2 pb-3 border-b-2 border-[#3878c2]">
-              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">
-                INVOICE
-              </p>
-              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">
-                DATE
-              </p>
-              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">
-                AMOUNT
-              </p>
-              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">
-                STATUS
-              </p>
-              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">
-                ACTION
-              </p>
+              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">INVOICE</p>
+              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">DATE</p>
+              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">AMOUNT</p>
+              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">STATUS</p>
+              <p className="font-['Inter:Semi_Bold',sans-serif] text-[#002540] text-[10px]">ACTION</p>
             </div>
 
-            {/* Table Rows */}
             <div className="flex flex-col">
-              {currentPageData.length === 0 ? (
+              {isLoading ? (
+                  <div className="py-8 text-center">
+                    <p className="font-['Inter:Regular',sans-serif] text-[#ababab] text-[12px]">Loading live database data...</p>
+                  </div>
+              ) : currentPageData.length === 0 ? (
                 <div className="py-8 text-center">
-                  <p className="font-['Inter:Regular',sans-serif] text-[#ababab] text-[12px]">
-                    No transactions found
-                  </p>
+                  <p className="font-['Inter:Regular',sans-serif] text-[#ababab] text-[12px]">No transactions found</p>
                 </div>
               ) : (
                 currentPageData.map((transaction) => (
@@ -371,49 +322,21 @@ export function TransactionHistoryPage() {
             </div>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="px-6 py-4 bg-white mb-2">
               <div className="flex items-center justify-center gap-2">
-                {/* Back Button */}
-                <button
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-[4px] font-['Inter:Medium',sans-serif] text-[12px] border-none cursor-pointer ${
-                    currentPage === 1
-                      ? 'bg-[#e0e2e6] text-[#ababab] cursor-not-allowed'
-                      : 'bg-[#f5f5f5] text-[#3a3e44] hover:bg-[#e0e2e6]'
-                  }`}
-                >
+                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className={`flex items-center gap-1 px-3 py-2 rounded-[4px] font-['Inter:Medium',sans-serif] text-[12px] border-none cursor-pointer ${currentPage === 1 ? 'bg-[#e0e2e6] text-[#ababab] cursor-not-allowed' : 'bg-[#f5f5f5] text-[#3a3e44] hover:bg-[#e0e2e6]'}`}>
                   <ChevronLeft className="size-[14px]" strokeWidth={2} />
                   <span>Back</span>
                 </button>
 
-                {/* Page Numbers */}
                 {getPageNumbers().map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => goToPage(page)}
-                    className={`min-w-[36px] h-[36px] px-2 rounded-[4px] font-['Inter:Semi_Bold',sans-serif] text-[12px] border-none cursor-pointer ${
-                      currentPage === page
-                        ? 'bg-[#3878c2] text-white'
-                        : 'bg-[#f5f5f5] text-[#3a3e44] hover:bg-[#e0e2e6]'
-                    }`}
-                  >
+                  <button key={page} onClick={() => goToPage(page)} className={`min-w-[36px] h-[36px] px-2 rounded-[4px] font-['Inter:Semi_Bold',sans-serif] text-[12px] border-none cursor-pointer ${currentPage === page ? 'bg-[#3878c2] text-white' : 'bg-[#f5f5f5] text-[#3a3e44] hover:bg-[#e0e2e6]'}`}>
                     {page}
                   </button>
                 ))}
 
-                {/* Next Button */}
-                <button
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-[4px] font-['Inter:Medium',sans-serif] text-[12px] border-none cursor-pointer ${
-                    currentPage === totalPages
-                      ? 'bg-[#e0e2e6] text-[#ababab] cursor-not-allowed'
-                      : 'bg-[#f5f5f5] text-[#3a3e44] hover:bg-[#e0e2e6]'
-                  }`}
-                >
+                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className={`flex items-center gap-1 px-3 py-2 rounded-[4px] font-['Inter:Medium',sans-serif] text-[12px] border-none cursor-pointer ${currentPage === totalPages ? 'bg-[#e0e2e6] text-[#ababab] cursor-not-allowed' : 'bg-[#f5f5f5] text-[#3a3e44] hover:bg-[#e0e2e6]'}`}>
                   <span>Next</span>
                   <ChevronRight className="size-[14px]" strokeWidth={2} />
                 </button>
@@ -422,17 +345,13 @@ export function TransactionHistoryPage() {
           )}
         </div>
 
-        {/* Bottom Navigation */}
-        <BottomNav 
-          activeTab={activeTab}
-          onTabChange={handleNavigation}
-        />
+        <BottomNav activeTab={activeTab} onTabChange={handleNavigation} />
 
-        {/* Transaction Details Modal */}
-        <TransactionDetailsModal
-          isOpen={showDetailsModal}
-          onClose={() => setShowDetailsModal(false)}
-          transaction={selectedTransaction}
+        <TransactionDetailsModal 
+          isOpen={showDetailsModal} 
+          onClose={() => setShowDetailsModal(false)} 
+          transaction={selectedTransaction} 
+          onSave={handleUpdateTransaction} 
         />
       </div>
     </MobileContainer>
