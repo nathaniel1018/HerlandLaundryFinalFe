@@ -163,23 +163,23 @@ export function DashboardPage() {
             <StatsCard
               icon="chart"
               title="Total sales"
-              value="₱15,521"
-              decimal=".50"
-              change="-1.21%"
-              changeType="decrease"
+              value={`₱${formattedSalesWhole}`}
+              decimal={formattedSalesDecimal}
+              change="+0.00%" 
+              changeType="increase"
             />
             <StatsCard
               icon="users"
               title="New customers"
-              value="389"
-              change="+5.25%"
+              value={totalCustomers.toString()}
+              change="+0.00%"
               changeType="increase"
             />
           </div>
 
           {/* Daily Sales Chart */}
           <div className="px-6 mb-4">
-            <DailySalesChart />
+            <DailySalesChart data={chartData} />
           </div>
 
           {/* Action Cards */}
@@ -194,7 +194,7 @@ export function DashboardPage() {
               title="Transaction History"
               description="View and edit current status of an order. View past transactions."
               buttonText="Go to Transaction History"
-              onClick={() => {/* Navigate to transaction history */}}
+               onClick={() => navigate("/history")}
             />
           </div>
         </div>

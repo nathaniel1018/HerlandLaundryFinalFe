@@ -1,12 +1,19 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import svgPaths from "../../imports/svg-9ok0hmg33j";
 import { MobileContainer } from "../components/MobileContainer";
 
 export function TwoStepVerificationPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Kinukuha natin ang email at password na pinasa galing sa Login Page
+  const { email, password } = location.state || {};
+
   const [codes, setCodes] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -14,8 +21,9 @@ export function TwoStepVerificationPage() {
     const newCodes = [...codes];
     newCodes[index] = value;
     setCodes(newCodes);
+    setErrorMsg(""); // Para mawala ang error message kapag nag-type ulit
 
-    // Auto-focus next input
+    // Auto-focus sa susunod na input box
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -27,12 +35,53 @@ export function TwoStepVerificationPage() {
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const code = codes.join("");
+    
+    // Safety check kung sakaling ni-refresh ng user ang page at nawala ang state
+    if (!email || !password) {
+      setErrorMsg("Session expired. Please log in again.");
+      setTimeout(() => navigate("/login"), 2000);
+      return;
+    }
+
     if (code.length === 6) {
-      navigate("/dashboard");
+      setIsLoading(true);
+      
+      try {
+        const response = await fetch("http://localhost:3000/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Ipapasa natin ulit ang email at password kasama ng 6-digit code
+          body: JSON.stringify({ email, password, code }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Invalid or expired 2FA code.");
+        }
+
+        // Kapag tama ang code, i-save ang token at pumunta sa dashboard
+        if (data.access_token) {
+          localStorage.setItem("access_token", data.access_token);
+          navigate("/dashboard");
+        }
+      } catch (error: any) {
+        setErrorMsg(error.message);
+        // I-clear ang boxes kapag nagka-error para madali mag-type ulit
+        setCodes(["", "", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setErrorMsg("Please enter all 6 digits.");
     }
   };
+
 
   return (
     <MobileContainer>
@@ -70,7 +119,7 @@ export function TwoStepVerificationPage() {
             {codes.map((code, index) => (
               <div key={index} className="rounded-[10px] size-[50px] border border-[#e1e1e1] flex items-center justify-center">
                 <input
-                  ref={(el) => (inputRefs.current[index] = el)}
+                  ref={(el) => {inputRefs.current[index] = el;}}
                   type="text"
                   inputMode="numeric"
                   maxLength={1}
