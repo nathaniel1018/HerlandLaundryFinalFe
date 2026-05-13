@@ -1,3 +1,7 @@
+// Go up THREE levels to reach 'src', then into 'assets'
+import salesImg from "../../../assets/sales-report.png";
+import historyImg from "../../../assets/transaction-history.png";
+
 interface ActionCardProps {
   title: string;
   description: string;
@@ -8,9 +12,20 @@ interface ActionCardProps {
 export function ActionCard({ title, description, buttonText, onClick }: ActionCardProps) {
   return (
     <div className="bg-white rounded-[8px] overflow-hidden border border-[#e0e2e6] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]">
-      {/* Media Placeholder */}
-      <div className="bg-[#bec1c6] h-[140px] w-full" />
       
+      {/* IMAGE */}
+      <img
+        src={
+          title === "Sales Report"
+            ? salesImg
+            : title === "Transaction History"
+            ? historyImg
+            : ""
+        }
+        alt={title}
+        className="h-[140px] w-full object-cover"
+      />
+
       {/* Content */}
       <div className="p-4">
         <h3 className="font-['Inter:Bold',sans-serif] font-bold text-[#3a3e44] text-[18px] leading-[28px] mb-1">
